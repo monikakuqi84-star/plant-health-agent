@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Health Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 40px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .upload-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .upload-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        input[type="file"] { padding: 10px; border: 2px solid #ddd; border-radius: 8px; flex: 1; min-width: 200px; }
+        button { padding: 12px 30px; background: #1D9E75; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; }
+        button:hover { background: #159960; }
+        .loading { display: none; text-align: center; padding: 20px; color: #667eea; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .plant-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.3s; }
+        .plant-card:hover { transform: translateY(-5px); }
+        .plant-image { width: 100%; height: 250px; object-fit: cover; background: #f0f0f0; }
+        .plant-info { padding: 20px; }
+        .plant-name { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
+        .plant-species { color: #666; font-size: 0.9em; margin-bottom: 15px; }
+        .health-bar { background: #eee; height: 20px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .health-fill { height: 100%; background: #1D9E75; transition: width 0.3s; }
+        .health-percent { font-weight: bold; margin: 5px 0; }
+        .fecha { font-size: 0.85em; color: #999; margin-bottom: 10px; }
+        .consejos { font-size: 0.9em; color: #555; margin-top: 15px; }
+        .consejos li { margin: 5px 0; }
+        .buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-healthcheck { flex: 1; padding: 10px; background: #667eea; border: none; color: white; border-radius: 8px; cursor: pointer; }
+        .btn-healthcheck:hover { background: #5568d3; }
+        .btn-delete { flex: 1; padding: 10px; background: #e74c3c; border: none; color: white; border-radius: 8px; cursor: pointer; }
+        .btn-delete:hover { background: #c0392b; }
+        .empty-state { text-align: center; color: white; padding: 40px; }
+        .historia { font-size: 0.85em; color: #999; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+        h2 { color: white; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Mi Portfolio de Plantas</h1>
+            <p>Analiza y monitorea la salud de tus plantas</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-form">
+                <input type="file" id="fileInput" accept="image/*">
+                <button onclick="uploadPhoto()">📸 Analizar Planta</button>
+            </div>
+            <div class="loading" id="loading">⏳ Analizando con IA...</div>
+        </div>
+
+        <div id="resultado" style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 30px; display: none;">
+            <div id="resultContent"></div>
+        </div>
+
+        <h2>📱 Mis Plantas</h2>
+        <div class="gallery" id="plantas">
+            <div class="empty-state">Aún no hay plantas. ¡Carga una foto para comenzar!</div>
+        </div>
+    </div>
+
+    <script>
+        function uploadPhoto() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) { alert('Selecciona una foto'); return; }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultado').style.display = 'none';
+            
+            fetch('/api/analyze', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    if (data.error) {
+                        document.getElementById('resultado').style.display = 'block';
+                        document.getElementById('resultContent').innerHTML = '<p style="color:red;">Error: ' + data.error + '</p>';
+                    } else {
+                        document.getElementById('resultado').style.display = 'block';
+                        document.getElementById('resultContent').innerHTML = `
+                            <h2>${data.nombre_comun}</h2>
+                            <p><strong>Especie:</strong> ${data.especie}</p>
+                            <p><strong>Salud: ${data.salud_porcentaje}%</strong></p>
+                            <p><strong>Estado:</strong> ${data.estado}</p>
+                            <h3>Consejos:</h3>
+                            <ul>${data.consejos.map(c => '<li>' + c + '</li>').join('')}</ul>
+                        `;
+                        loadPlantas();
+                        document.getElementById('fileInput').value = '';
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error(e);
+                });
+        }
+        
+        function deletePlant(id) {
+            if (!confirm('¿Eliminar esta planta del portfolio?')) return;
+            fetch('/api/plantas/' + id, { method: 'DELETE' })
+                .then(() => loadPlantas());
+        }
+        
+        function healthCheck(id) {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.onchange = function() {
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('plant_id', id);
+                
+                document.getElementById('loading').style.display = 'block';
+                fetch('/api/analyze', { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById('loading').style.display = 'none';
+                        loadPlantas();
+                        alert('✅ Planta actualizada: ' + data.salud_porcentaje + '% de salud');
+                    });
+            };
+            fileInput.click();
+        }
+        
+        function loadPlantas() {
+            fetch('/api/plantas')
+                .then(r => r.json())
+                .then(plantas => {
+                    const gallery = document.getElementById('plantas');
+                    if (plantas.length === 0) {
+                        gallery.innerHTML = '<div class="empty-state">Aún no hay plantas.</div>';
+                        return;
+                    }
+                    gallery.innerHTML = plantas.map(p => {
+                        const lastFoto = p.fotos[p.fotos.length - 1];
+                        const fecha = new Date(lastFoto.fecha).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric'});
+                        return `
+                            <div class="plant-card">
+                                <img class="plant-image" src="data:image/jpeg;base64,${lastFoto.foto}" alt="${p.nombre}">
+                                <div class="plant-info">
+                                    <div class="plant-name">${p.nombre}</div>
+                                    <div class="plant-species">${p.especie}</div>
+                                    <div class="fecha">📅 ${fecha}</div>
+                                    <div class="health-percent">Salud: ${lastFoto.salud}%</div>
+                                    <div class="health-bar">
+                                        <div class="health-fill" style="width: ${lastFoto.salud}%"></div>
+                                    </div>
+                                    <div class="plant-info-text">${lastFoto.estado || 'Sin descripción'}</div>
+                                    <div class="consejos">
+                                        <strong>Consejos:</strong>
+                                        <ul>${lastFoto.consejos.map(c => '<li>' + c + '</li>').join('')}</ul>
+                                    </div>
+                                    ${p.fotos.length > 1 ? '<div class="historia">📊 ' + p.fotos.length + ' análisis guardados</div>' : ''}
+                                    <div class="buttons">
+                                        <button class="btn-healthcheck" onclick="healthCheck('${p.id}')">📊 Actualizar</button>
+                                        <button class="btn-delete" onclick="deletePlant('${p.id}')">🗑️ Eliminar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+        
+        loadPlantas();
+    </script>
+</body>
+</html>

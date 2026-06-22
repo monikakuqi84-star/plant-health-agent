@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de Planta</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <a href="/" class="back-link">← Volver</a>
+    <h1>🌿 Plant Health Agent</h1>
+  </header>
+
+  <main class="detail-main">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando información…</p>
+    </div>
+
+    <div id="detail" class="detail-container hidden">
+      <div class="detail-top">
+        <img id="planta-img" src="" alt="Foto de la planta" class="detail-img" />
+        <div class="detail-info">
+          <h2 id="planta-nombre"></h2>
+          <p id="planta-especie" class="especie"></p>
+          <div class="health-ring-container">
+            <svg viewBox="0 0 120 120" class="health-ring">
+              <circle cx="60" cy="60" r="50" class="ring-bg" />
+              <circle cx="60" cy="60" r="50" class="ring-fill" id="ring-fill" />
+            </svg>
+            <div class="health-text">
+              <span id="salud-pct"></span>
+              <small>salud</small>
+            </div>
+          </div>
+          <div class="estado-badge" id="estado-badge"></div>
+          <p class="fecha" id="planta-fecha"></p>
+        </div>
+      </div>
+
+      <div class="detail-sections">
+        <div class="detail-card problemas" id="section-problemas">
+          <h3>⚠️ Problemas detectados</h3>
+          <ul id="list-problemas"></ul>
+        </div>
+
+        <div class="detail-card necesidades">
+          <h3>💧 Necesidades</h3>
+          <ul id="list-necesidades"></ul>
+        </div>
+
+        <div class="detail-card consejos">
+          <h3>✅ Consejos</h3>
+          <ul id="list-consejos"></ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const plantaId = "{{ planta_id }}";
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

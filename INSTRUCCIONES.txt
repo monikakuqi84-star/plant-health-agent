@@ -1,0 +1,16 @@
+App web para analizar plantas.
+
+Frontend: index.html (upload + galería), planta.html (detalle + health check)
+
+Backend Flask:
+- POST /api/analyze: foto → Claude Vision → JSON
+- GET /api/plantas: lista
+- GET /api/plantas/:id: detalle
+
+JSON salud: nombre, especie, salud_porcentaje (0-100), estado, problemas, necesidades, consejos
+
+Archivos: app.py, templates/index.html, templates/planta.html, static/style.css, static/app.js, .env
+
+Almacena en plantas.json. CLAUDE_API_KEY desde .env.
+
+Lista para: python app.py
